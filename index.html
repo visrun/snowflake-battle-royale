@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGS Snowflake Battle Royale</title>
+<style>
+:root{
+--navy:#06233f;--blue:#1683d8;--cyan:#57c9db;--ink:#10263e;
+--muted:#63758a;--line:#dbe7ef;--good:#159866;--bad:#d94e63;
+--shadow:0 18px 48px rgba(6,35,63,.16);
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Inter,Arial,sans-serif;color:var(--ink);
+background:linear-gradient(135deg,#e9f8fb,#f7fbfd 45%,#dceef5);}
+.app{max-width:1180px;margin:auto;padding:28px 20px 48px;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;}
+.logo{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;color:white;
+font-size:21px;background:linear-gradient(135deg,var(--blue),var(--cyan));}
+.small-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.12em;}
+.shell{overflow:hidden;border:1px solid white;border-radius:28px;background:#ffffffdd;box-shadow:var(--shadow);}
+.hero{position:relative;padding:38px;color:white;background:linear-gradient(120deg,#05233f,#0b4163 52%,#117eaa);}
+.hero h1{max-width:720px;margin:0 0 12px;font-size:clamp(28px,4vw,46px);line-height:1.04;}
+.hero p{max-width:720px;margin:0;color:#d5eff7;line-height:1.55;}
+.content{padding:30px 38px;}
+.hidden{display:none !important;}
+.setup{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;}
+.panel{padding:22px;border:1px solid var(--line);border-radius:20px;background:#fff;}
+.panel h2{margin-top:0;}
+.panel p{color:var(--muted);line-height:1.55;}
+input{width:100%;padding:14px;border:1px solid var(--line);border-radius:12px;font-size:15px;}
+input.error{border-color:var(--bad);box-shadow:0 0 0 3px #d94e6322;}
+.error-text{color:var(--bad);font-size:13px;margin-top:6px;min-height:16px;}
+button{border:0;border-radius:12px;padding:13px 18px;font-weight:750;cursor:pointer;}
+.primary{color:white;background:linear-gradient(135deg,var(--blue),#0d69b5);box-shadow:0 8px 18px #1683d833;}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;}
+.stat{padding:11px 14px;border:1px solid var(--line);border-radius:14px;background:#f2f8fa;font-size:13px;}
+.stat b{display:block;color:var(--navy);font-size:18px;}
+.quiz-header{display:flex;justify-content:space-between;align-items:center;gap:15px;}
+.progress-wrapper{height:10px;margin:12px 0 26px;overflow:hidden;border-radius:999px;background:#e8f1f5;}
+.progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:.3s;}
+.timer{padding:9px 12px;border-radius:12px;color:var(--navy);font-weight:bold;background:#eaf7fb;white-space:nowrap;}
+.timer.warning{color:#b94455;background:#fff0f2;}
+.question{max-width:900px;margin:0 0 20px;font-size:24px;line-height:1.3;}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.option{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;color:var(--ink);
+border:1px solid var(--line);background:white;line-height:1.4;padding:16px;border-radius:16px;}
+.option:hover,.option.selected{border-color:var(--blue);background:#f0f9fc;}
+.option-letter{min-width:28px;height:28px;display:grid;place-items:center;border-radius:9px;
+color:var(--navy);background:#e9f4f7;font-weight:bold;}
+.option.selected .option-letter{color:white;background:var(--blue);}
+.bottom{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:24px;}
+.hint{min-height:42px;padding:12px 14px;border:1px solid #f1df91;border-radius:14px;color:#805f0b;
+background:#fff7d8;font-size:14px;}
+.feedback{margin-top:16px;padding:14px 16px;border-radius:14px;}
+.feedback.good{color:#0d6b47;background:#eaf9f2;}
+.feedback.bad{color:#9c3245;background:#fff0f2;}
+.result{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:center;}
+.score-ring{width:190px;height:190px;display:grid;place-items:center;border-radius:50%;
+background:conic-gradient(var(--blue) var(--score),#e7f0f4 0);}
+.score-inner{width:160px;height:160px;display:grid;place-items:center;align-content:center;
+border-radius:50%;background:white;text-align:center;}
+.score-inner strong{color:var(--navy);font-size:42px;}
+.review{margin-top:26px;padding-top:22px;border-top:1px solid var(--line);}
+.review-row{padding:14px 0;border-bottom:1px solid var(--line);}
+.review-row small{color:var(--muted);}
+.topic-pill{display:inline-block;padding:2px 10px;border-radius:999px;background:#eef7fb;
+color:var(--navy);font-size:11px;font-weight:700;text-transform:uppercase;margin-left:8px;}
+@media(max-width:760px){
+.setup,.result,.options{grid-template-columns:1fr;}
+.hero,.content{padding:26px 20px;}
+.question{font-size:21px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+<div class="brand">
+<div class="logo">S</div>
+<div>OGS Snowflake Battle Royale<div class="small-label">Data platform fluency arena</div></div>
+</div>
+<div class="small-label">Snowflake assessment</div>
+</div>
+<div class="shell">
+<section class="hero">
+<h1>OGS Snowflake Battle Royale</h1>
+<p>A 15-question, 7-minute battle covering Snowflake architecture, data warehousing,
+ingestion, programmability, and governance — including scenario-based questions.
+Every attempt uses a completely fresh, unrepeated mix. Enter your name to join the leaderboard.</p>
+</section>
+<div class="content">
+<section id="startScreen">
+<div class="setup">
+<div class="panel">
+<h2>Ready to battle?</h2>
+<p>15 medium-to-hard questions, including scenario-based decisions. You have
+7 minutes total for the whole attempt. A hint appears after 10 seconds per question.
+Your name is required so you can be ranked on the leaderboard.</p>
+<input id="userName" placeholder="Enter your full name (required)" maxlength="40">
+<div class="error-text" id="nameError"></div>
+<button class="primary" onclick="startQuiz()">Start Battle</button>
+</div>
+<div class="panel">
+<h2>Coverage map</h2>
+<p>Architecture, table types, Time Travel, zero-copy cloning, micro-partitioning,
+clustering, virtual warehouses, file formats, stages, COPY INTO, Streams, Tasks,
+Snowpipe, UDFs/UDTFs, stored procedures, views, access control, and real-world scenarios.</p>
+<div class="stats">
+<div class="stat"><b id="bankSizeStat">--</b>question bank</div>
+<div class="stat"><b>15</b>per attempt</div>
+<div class="stat"><b>7 min</b>total time</div>
+</div>
+</div>
+</div>
+</section>
+<section id="quizScreen" class="hidden">
+<div class="quiz-header">
+<div style="flex:1">
+<div id="questionMeta" class="small-label"></div>
+<div class="progress-wrapper"><div id="progress" class="progress"></div></div>
+</div>
+<div id="timer" class="timer">07:00</div>
+</div>
+<h2 id="questionText" class="question"></h2>
+<div id="options" class="options"></div>
+<div class="bottom">
+<div id="hint" class="hint">Hint unlocks in <span id="hintCounter">10</span>s</div>
+<button id="nextButton" class="primary" onclick="nextQuestion()" disabled>Next Question</button>
+</div>
+<div id="feedback" class="feedback hidden"></div>
+</section>
+<section id="resultScreen" class="hidden">
+<div class="result">
+<div id="scoreRing" class="score-ring">
+<div class="score-inner"><strong id="scorePercent">0%</strong><span>Score</span></div>
+</div>
+<div>
+<div class="small-label">Battle complete</div>
+<h2 id="resultTitle"></h2>
+<p id="resultSummary" style="color:var(--muted);line-height:1.55"></p>
+<button class="primary" onclick="showStartScreen()">Fight Another Round</button>
+</div>
+</div>
+<div class="review">
+<h3>Answer Review</h3>
+<div id="reviewList"></div>
+</div>
+</section>
+</div>
+</div>
+</div>
+<script>
+const QB = [
+{cat:"Architecture",q:"Snowflake's architecture is best described as:",options:["Shared-nothing only","Shared-disk only","Multi-cluster shared data architecture","Single-node monolithic"],answer:2},
+{cat:"Architecture",q:"Which THREE layers make up Snowflake's architecture?",options:["Storage, Compute, Cloud Services","Storage, Network, Security","Compute, Metadata, API","Storage, Compute, UI"],answer:0},
+{cat:"Architecture",q:"In Snowflake, storage and compute are:",options:["Tightly coupled","Decoupled and scale independently","Only available together","Not separated"],answer:1},
+{cat:"Architecture",q:"Which layer handles query optimization, authentication, and metadata management?",options:["Storage Layer","Compute Layer","Cloud Services Layer","Cache Layer"],answer:2},
+{cat:"Architecture",q:"Snowflake stores table data internally in which format?",options:["Row-based CSV","Compressed columnar micro-partitions","Uncompressed flat files","JSON blobs only"],answer:1},
+{cat:"Architecture",q:"Which cloud providers does Snowflake run on?",options:["AWS only","Azure only","AWS, Azure, and GCP","On-premise only"],answer:2},
+{cat:"Architecture",q:"What manages metadata like table statistics and micro-partition pruning info?",options:["Virtual Warehouse","Cloud Services Layer","Result Cache","Local Disk Cache"],answer:1},
+{cat:"Architecture",q:"Which statement about Snowflake compute nodes is TRUE?",options:["They share data directly with each other via disk","They access a shared, centralized storage layer","They store persistent state locally","They cannot scale independently"],answer:1},
+{cat:"Architecture",q:"What is the 'Result Cache' in Snowflake used for?",options:["Storing raw table data permanently","Returning identical query results without re-execution within 24 hrs","Caching only DDL statements","Compressing micro-partitions"],answer:1},
+{cat:"Architecture",q:"How long does Snowflake typically retain the Result Cache by default?",options:["1 hour","24 hours","7 days","Indefinitely"],answer:1},
+{cat:"Architecture",q:"Which component is responsible for query compilation and optimization?",options:["Virtual Warehouse","Cloud Services Layer","External Stage","Snowpipe"],answer:1},
+{cat:"Architecture",q:"What enables Snowflake to scale compute up or down without moving data?",options:["Data replication","Decoupled storage and compute","Local caching only","Manual sharding"],answer:1},
+{cat:"Architecture",q:"Which layer would you interact with when running SHOW commands?",options:["Storage Layer","Cloud Services Layer","Virtual Warehouse Layer","Stage Layer"],answer:1},
+{cat:"Architecture",q:"Metadata such as row counts and min/max values per micro-partition is used for:",options:["Data replication","Query pruning and optimization","Billing calculation only","User authentication"],answer:1},
+{cat:"Architecture",q:"Which of the following is NOT a benefit of Snowflake's architecture?",options:["Independent scaling of compute","Automatic data replication across regions by default","Concurrent workloads without contention","Separation of storage and compute"],answer:1},
+{cat:"Architecture",q:"Snowflake charges customers based primarily on:",options:["Number of users only","Storage used and compute credits consumed","Number of queries only","Number of tables"],answer:1},
+{cat:"Architecture",q:"Scenario: Your dashboard queries are slow due to metadata operations. Which layer would you investigate first?",options:["Storage Layer","Cloud Services Layer","Physical disk layer","Stage Layer"],answer:1},
+{cat:"Table Types",q:"Which table type provides Fail-safe protection?",options:["Temporary","Transient","Permanent","All types equally"],answer:2},
+{cat:"Table Types",q:"Transient tables have:",options:["Time Travel up to 90 days and Fail-safe","Time Travel up to 1 day and NO Fail-safe","No Time Travel at all","Permanent Fail-safe of 7 days"],answer:1},
+{cat:"Table Types",q:"Temporary tables persist for:",options:["The duration of the session only","90 days","Forever until dropped","1 year"],answer:0},
+{cat:"Table Types",q:"Which table type is best for staging ETL intermediate data to save storage cost?",options:["Permanent","Transient","Temporary is fine too, but Transient is typical for shared ETL staging","External"],answer:2},
+{cat:"Table Types",q:"Fail-safe period for Permanent tables (standard) is:",options:["0 days","1 day","7 days","90 days"],answer:2},
+{cat:"Table Types",q:"Maximum Time Travel retention for a standard (non-Enterprise) account is:",options:["1 day","7 days","90 days","365 days"],answer:0},
+{cat:"Table Types",q:"Enterprise edition allows max Time Travel retention up to:",options:["1 day","7 days","90 days","30 days"],answer:2},
+{cat:"Table Types",q:"Which table type is visible only to the session or user that created it?",options:["Permanent","Transient","Temporary","External"],answer:2},
+{cat:"Table Types",q:"Scenario: You need a table for a quick one-off calculation during your session with zero storage cost concerns after logout. Choose:",options:["Permanent","Transient","Temporary","External"],answer:2},
+{cat:"Table Types",q:"Fail-safe is:",options:["User-configurable recovery window","A fixed, non-configurable 7-day (or 0) disaster recovery period managed by Snowflake","Same as Time Travel","Available for Temporary tables"],answer:1},
+{cat:"Table Types",q:"Which table type CANNOT retain a persistent clone across sessions?",options:["Permanent","Transient","Temporary","None, all can"],answer:2},
+{cat:"Table Types",q:"Storage cost is generally lowest for which of these (due to no Fail-safe)?",options:["Permanent table","Transient table","External table (data stored outside Snowflake)","Materialized view"],answer:2},
+{cat:"Table Types",q:"Scenario: Finance requires 90-day recoverability for a critical ledger table. Which type and edition combo fits?",options:["Temporary table, Standard edition","Transient table, any edition","Permanent table, Enterprise edition or higher","Permanent table, Standard edition"],answer:2},
+{cat:"Table Types",q:"Which statement is TRUE about Temporary tables and Time Travel?",options:["They support up to 90 days Time Travel","They support Time Travel only within the session, max 1 day","They never support Time Travel","They support Fail-safe of 7 days"],answer:1},
+{cat:"Time Travel",q:"Which clause is used to query historical data in Snowflake?",options:["ROLLBACK TO","AT / BEFORE","HISTORY OF","RESTORE TO"],answer:1},
+{cat:"Time Travel",q:"Which command restores a dropped table using Time Travel?",options:["RESTORE TABLE","UNDROP TABLE","RECOVER TABLE","REVERT TABLE"],answer:1},
+{cat:"Time Travel",q:"Time Travel allows querying data based on:",options:["Only exact timestamp","Timestamp, offset, or statement ID","Only statement ID","Only date, not time"],answer:1},
+{cat:"Time Travel",q:"Which SQL correctly queries a table as of 1 hour ago?",options:["SELECT * FROM t AT(OFFSET => -3600)","SELECT * FROM t BEFORE(OFFSET => -3600)","SELECT * FROM t TRAVEL(-3600)","SELECT * FROM t HISTORY(-3600)"],answer:0},
+{cat:"Time Travel",q:"Time Travel data retention is controlled by the parameter:",options:["DATA_RETENTION_TIME_IN_DAYS","TIME_TRAVEL_DAYS","RETENTION_PERIOD","HISTORY_WINDOW"],answer:0},
+{cat:"Time Travel",q:"Scenario: A user accidentally TRUNCATEs a table 10 minutes ago. What is the best immediate recovery option?",options:["UNDROP TABLE","SELECT with AT(OFFSET => -600), then reinsert the data","Restore from backup file","Contact Snowflake support only"],answer:1},
+{cat:"Time Travel",q:"Which of these can be recovered using Time Travel?",options:["Dropped databases, schemas, and tables","Only rows, not objects","Only warehouses","Only stages"],answer:0},
+{cat:"Time Travel",q:"BEFORE(STATEMENT => 'query_id') is used to:",options:["View data state just before a specific query executed","View data 1 day before","Roll back permanently","Delete history"],answer:0},
+{cat:"Time Travel",q:"What happens to Time Travel data once the retention period ends?",options:["Immediately deleted","Moves into Fail-safe (if applicable)","Converted to backup file","Kept forever"],answer:1},
+{cat:"Time Travel",q:"Can Time Travel retention be extended beyond 90 days?",options:["Yes, unlimited on Business Critical","No, 90 days is the absolute hard max","Yes, up to 365 days on Standard","Yes, via a support ticket only"],answer:1},
+{cat:"Time Travel",q:"Which is true about setting DATA_RETENTION_TIME_IN_DAYS = 0?",options:["Disables Time Travel for that object","Enables max Time Travel","Deletes the object","Has no effect"],answer:0},
+{cat:"Time Travel",q:"Scenario: You need to compare today's sales table with yesterday's version for audit. What is the best approach?",options:["Take a manual export daily","Use Time Travel AT(OFFSET) to query yesterday's state directly","Restore a full backup","Use Snowpipe"],answer:1},
+{cat:"Time Travel",q:"Which command shows the current retention setting for an object?",options:["SHOW PARAMETERS LIKE 'DATA_RETENTION_TIME_IN_DAYS'","DESCRIBE RETENTION","SHOW TIME TRAVEL","GET_RETENTION()"],answer:0},
+{cat:"Time Travel",q:"UNDROP requires that the object:",options:["Is still within its Time Travel retention period and not purged","Has Fail-safe enabled","Was created within the last 24 hours","Is a view only"],answer:0},
+{cat:"Time Travel",q:"Which statement about Time Travel and Transient tables is correct?",options:["Transient tables get max 90 days Time Travel by default","Transient tables get max 1 day Time Travel by default","Transient tables cannot use Time Travel at all","Transient tables get Fail-safe instead of Time Travel"],answer:1},
+{cat:"Zero Copy Clone",q:"Zero Copy Cloning creates a clone that:",options:["Physically duplicates all data immediately, doubling storage","Shares underlying micro-partitions initially, consuming no extra storage until changes occur","Only clones schema, not data","Requires manual data copy via COPY INTO"],answer:1},
+{cat:"Zero Copy Clone",q:"Which command is used to create a zero-copy clone?",options:["CREATE TABLE ... LIKE","CREATE TABLE ... CLONE","COPY TABLE ... AS","DUPLICATE TABLE"],answer:1},
+{cat:"Zero Copy Clone",q:"After cloning a table and modifying rows in the clone, what happens to storage?",options:["No extra storage is ever used","New micro-partitions are created only for changed data (copy-on-write)","Original table data is deleted","Clone becomes read-only forever"],answer:1},
+{cat:"Zero Copy Clone",q:"Can you clone an entire database including all schemas and tables?",options:["No, only single tables can be cloned","Yes, CREATE DATABASE ... CLONE clones the whole database","Only schemas, not databases","Only via export and import"],answer:1},
+{cat:"Zero Copy Clone",q:"Zero Copy Clone can leverage Time Travel to clone a table as it existed:",options:["Only in the current state","At a historical point using the AT/BEFORE clause","Only after TRUNCATE","Never with historical data"],answer:1},
+{cat:"Zero Copy Clone",q:"Scenario: You want a full production-like dev/test environment instantly without extra storage cost initially. What is the best approach?",options:["Manual COPY INTO for every table","Zero Copy Clone of the database or schema","Export to S3 and reload","Use Snowpipe"],answer:1},
+{cat:"Zero Copy Clone",q:"Do clones inherit granted privileges from the source object automatically?",options:["Yes, always automatically","No, privileges must be granted explicitly on the clone","Only role-level privileges are inherited","Only for tables, not schemas"],answer:1},
+{cat:"Zero Copy Clone",q:"Which object types support cloning in Snowflake?",options:["Only Tables","Tables, Schemas, and Databases","Only Views","Only Stages"],answer:1},
+{cat:"Zero Copy Clone",q:"Cloning a table does NOT copy:",options:["Column structure","Micro-partition metadata pointers","Physical duplicate data (initially)","Table name reference for the clone"],answer:2},
+{cat:"Zero Copy Clone",q:"What happens if the source table is dropped after cloning?",options:["The clone is also dropped","The clone remains independent and unaffected","Clone becomes read-only","An error occurs immediately"],answer:1},
+{cat:"Zero Copy Clone",q:"Streams and Tasks on a cloned table:",options:["Are automatically cloned and remain active identically","Are NOT cloned by default and must be recreated","Cause the clone operation to fail","Get merged with the source object's streams"],answer:1},
+{cat:"Zero Copy Clone",q:"Which is a valid zero-copy clone historical syntax?",options:["CREATE TABLE t_clone CLONE t AT(TIMESTAMP => '2024-01-01 00:00:00')","CLONE TABLE t_clone FROM t AT '2024-01-01'","COPY TABLE t INTO t_clone HISTORY","SNAPSHOT TABLE t AS t_clone"],answer:0},
+{cat:"Micro-Partitioning",q:"Snowflake automatically divides table data into:",options:["User-defined partitions only","Micro-partitions of contiguous storage units (roughly 50-500MB uncompressed)","Single large partition per table","Row-level partitions"],answer:1},
+{cat:"Micro-Partitioning",q:"Micro-partition metadata stored by Snowflake includes:",options:["Only row count","Min/max values, distinct count, and null count per column","Only file size","Only creation timestamp"],answer:1},
+{cat:"Micro-Partitioning",q:"Micro-partitioning enables which optimization technique?",options:["Manual indexing","Partition pruning during query execution","Full table scan acceleration only","Data replication"],answer:1},
+{cat:"Micro-Partitioning",q:"Are micro-partitions immutable once created?",options:["No, they are updated in-place","Yes, updates create new micro-partitions (old ones marked for removal)","Only for Transient tables","Only during Time Travel"],answer:1},
+{cat:"Micro-Partitioning",q:"Scenario: A large fact table has poor pruning despite filters on 'order_date'. What is a likely underlying cause?",options:["Data isn't naturally clustered by order_date and needs a clustering key","Table is Temporary","Warehouse is too small","File format is Parquet"],answer:0},
+{cat:"Micro-Partitioning",q:"Micro-partition size range is approximately:",options:["1-5 MB compressed","50-500 MB uncompressed","1-2 GB compressed","10 KB to 1 MB uncompressed"],answer:1},
+{cat:"Micro-Partitioning",q:"Which best describes 'pruning' in Snowflake?",options:["Deleting old rows automatically","Skipping micro-partitions that don't match a query filter based on metadata","Compressing data further","Removing unused columns"],answer:1},
+{cat:"Micro-Partitioning",q:"Micro-partitioning in Snowflake is:",options:["Manually configured by DBAs","Automatic and managed by Snowflake internally","Only available on Enterprise edition","Configured via a CREATE PARTITION statement"],answer:1},
+{cat:"Micro-Partitioning",q:"Which factor negatively impacts pruning effectiveness the most?",options:["Well-ordered or clustered data on filter columns","Highly randomized or unsorted data on frequently filtered columns","Small table size","Using the VARCHAR data type"],answer:1},
+{cat:"Clustering",q:"A Clustering Key in Snowflake is used to:",options:["Create indexes for faster lookup","Co-locate similar data in micro-partitions to improve pruning","Encrypt data at rest","Partition data across warehouses"],answer:1},
+{cat:"Clustering",q:"Which command defines or alters a clustering key on an existing table?",options:["ALTER TABLE t CLUSTER BY (col)","CREATE INDEX ON t(col)","SET CLUSTER KEY = col","PARTITION TABLE t BY col"],answer:0},
+{cat:"Clustering",q:"When should you consider defining a clustering key?",options:["For every table regardless of size","For very large multi-terabyte tables with queries filtering on specific columns showing poor pruning","Only for Temporary tables","Never, Snowflake doesn't support this"],answer:1},
+{cat:"Clustering",q:"What is 'Automatic Clustering'?",options:["A manual DBA process","A background Snowflake service that automatically re-clusters data as it's added, consuming credits","A one-time clustering during table creation only","A feature only for Views"],answer:1},
+{cat:"Clustering",q:"Which function helps assess clustering quality and depth of a table?",options:["SYSTEM$CLUSTERING_INFORMATION","SHOW CLUSTERING","DESCRIBE CLUSTER","GET_CLUSTER_DEPTH()"],answer:0},
+{cat:"Clustering",q:"Scenario: Your team notices rising costs from the Automatic Clustering service. What is a likely cause?",options:["Table has too few rows","High frequency of DML causing constant re-clustering on a poorly chosen clustering key","Clustering key removed","Warehouse too large"],answer:1},
+{cat:"Clustering",q:"Clustering keys are most beneficial for tables that are:",options:["Small, a few MB","Very large with a clear, frequently-filtered column pattern","Frequently truncated","Temporary tables"],answer:1},
+{cat:"Clustering",q:"Does defining a clustering key guarantee immediate physical re-sort of existing data?",options:["Yes, instantly","No, reclustering happens gradually via background maintenance","Only for new tables","Only if manually triggered via COPY INTO"],answer:1},
+{cat:"Clustering",q:"Which is TRUE about choosing clustering key columns?",options:["Always choose high-cardinality columns like a UUID","Choose columns commonly used in WHERE/JOIN with moderate-to-low cardinality relative to table size","Choose only VARCHAR columns","Clustering keys should be random"],answer:1},
+{cat:"Clustering",q:"Multiple-column clustering keys can be defined for:",options:["Only Views","A single table using composite or multiple columns","Only external tables","Never, only one column allowed"],answer:1},
+{cat:"Virtual Warehouse",q:"A Virtual Warehouse in Snowflake represents:",options:["A physical server rack","Compute resources (CPU, memory, temp storage) used to execute queries","A storage bucket","A user role"],answer:1},
+{cat:"Virtual Warehouse",q:"Which command creates a warehouse with auto-suspend after 5 minutes idle?",options:["CREATE WAREHOUSE wh AUTO_SUSPEND = 300","CREATE WAREHOUSE wh IDLE_TIME = 5","CREATE WAREHOUSE wh SUSPEND_AFTER = 5m","SET WAREHOUSE wh AUTOSTOP = 300"],answer:0},
+{cat:"Virtual Warehouse",q:"What does Auto-Resume do for a warehouse?",options:["Automatically increases warehouse size","Automatically starts the warehouse when a query is submitted","Automatically clones the warehouse","Automatically deletes idle warehouses"],answer:1},
+{cat:"Virtual Warehouse",q:"Warehouse sizes in Snowflake roughly double in compute credits as you move up from X-Small to:",options:["Small, Medium, Large, X-Large, etc.","The same credits regardless of size","Only 3 fixed sizes exist","Sizes are user-defined numerically"],answer:0},
+{cat:"Virtual Warehouse",q:"What is a Multi-Cluster Warehouse used for?",options:["Increasing single query speed only","Handling high concurrency by adding additional clusters of the same size","Reducing storage cost","Replacing Time Travel"],answer:1},
+{cat:"Virtual Warehouse",q:"Multi-cluster warehouse scaling policy options include:",options:["Standard and Economy","Aggressive and Passive","Manual and Auto only","Fixed and Elastic"],answer:0},
+{cat:"Virtual Warehouse",q:"Scenario: Many concurrent users are experiencing queuing on the same warehouse during peak hours. What is the best fix?",options:["Increase warehouse size only","Enable a multi-cluster warehouse to scale out for concurrency","Decrease AUTO_SUSPEND time","Switch to a Transient table"],answer:1},
+{cat:"Virtual Warehouse",q:"Scenario: A single complex query with heavy joins runs slowly with no queuing. What is the best fix?",options:["Add more clusters (scale out)","Increase warehouse size (scale up)","Reduce Time Travel retention","Use Snowpipe"],answer:1},
+{cat:"Virtual Warehouse",q:"Credits are consumed by a warehouse:",options:["Only when queries return results","For every second it is running, with a per-second billing after a minimum","Only once per day at a flat rate","Based on data volume, not warehouse size"],answer:1},
+{cat:"Virtual Warehouse",q:"Which statement about warehouse compute and storage billing is correct?",options:["They share the same billing meter","They are billed separately: compute in credits, storage in TB per month","Storage is free if you use a warehouse","Compute cost depends on storage size"],answer:1},
+{cat:"Virtual Warehouse",q:"What happens to running queries when a warehouse is set to auto-suspend mid-query?",options:["The warehouse won't suspend until active queries complete","The query is killed immediately regardless","The query pauses indefinitely","Data is lost"],answer:0},
+{cat:"Virtual Warehouse",q:"Resizing a warehouse while queries are running:",options:["Requires a warehouse restart, disrupting all queries","Takes effect for new queries; running queries continue at the original size","Is not supported at all","Only works when the warehouse is suspended"],answer:1},
+{cat:"Virtual Warehouse",q:"Which best describes 'warehouse contention'?",options:["Compute conflict between storage layers","Multiple queries competing for limited compute on the same warehouse, causing queuing","A billing error","A network security issue"],answer:1},
+{cat:"Virtual Warehouse",q:"What is the minimum billing duration when a warehouse starts a new session of activity?",options:["1 second","60 seconds","5 minutes","1 hour"],answer:1},
+{cat:"Virtual Warehouse",q:"Can different teams use separate warehouses on the same shared data without contention?",options:["No, only one warehouse can access data at a time","Yes, multiple independent warehouses can query the same data concurrently without resource contention","Only if using the same warehouse size","Only for read-only queries"],answer:1},
+{cat:"File Formats",q:"Which of these is NOT a supported Snowflake file format for loading data?",options:["CSV","JSON","Parquet","A Word document (.docx)"],answer:3},
+{cat:"File Formats",q:"CREATE FILE FORMAT is used to:",options:["Format the output of a SELECT query","Define reusable specifications for parsing and loading staged files (delimiter, compression, etc.)","Compress a database","Convert file storage location"],answer:1},
+{cat:"File Formats",q:"Which file format typically offers the best compression and columnar query performance for Snowflake external tables?",options:["CSV","JSON","Parquet","XML"],answer:2},
+{cat:"File Formats",q:"Which option in a CSV file format skips header rows?",options:["SKIP_HEADER = 1","IGNORE_HEADER = true","REMOVE_HEADER","HEADER_ROWS = 0"],answer:0},
+{cat:"File Formats",q:"Semi-structured formats like JSON, Avro, ORC, and Parquet are loaded into which Snowflake data type by default (if not flattened)?",options:["VARCHAR","VARIANT","ARRAY only","OBJECT only"],answer:1},
+{cat:"File Formats",q:"Scenario: Your JSON files have deeply nested arrays that need to be queried as rows. Which function helps flatten them?",options:["FLATTEN()","UNNEST_JSON()","PARSE_JSON()","EXPLODE()"],answer:0},
+{cat:"File Formats",q:"Which compression types can Snowflake commonly auto-detect for staged files?",options:["GZIP, BZ2, ZSTD, and more","Only ZIP","No compression is supported","Only RAR"],answer:0},
+{cat:"File Formats",q:"The PARSE_JSON() function is used to:",options:["Convert VARIANT to string","Parse a string into a VARIANT/JSON structure for querying","Load files from a stage","Create a file format"],answer:1},
+{cat:"File Formats",q:"Which clause specifies a file format inline at COPY INTO time, without pre-creating a named file format?",options:["FILE_FORMAT = (TYPE = 'CSV' FIELD_DELIMITER = ',')","USE FORMAT CSV","FORMAT AS CSV","SET FORMAT = CSV"],answer:0},
+{cat:"Stages",q:"An Internal Stage in Snowflake refers to:",options:["Storage in an external cloud bucket you manage","Storage managed within Snowflake itself (User, Table, or Named stage)","A staging server outside Snowflake","A virtual warehouse"],answer:1},
+{cat:"Stages",q:"Which of these is NOT a type of internal stage?",options:["User Stage (@~)","Table Stage (@%table_name)","Named Stage","External S3 Stage"],answer:3},
+{cat:"Stages",q:"An External Stage points to data stored in:",options:["Snowflake's internal storage only","Cloud storage like S3, Azure Blob, or GCS that you manage","Local disk on a virtual warehouse","A stored procedure"],answer:1},
+{cat:"Stages",q:"Which command lists files in a stage?",options:["SHOW FILES","LIST @stage_name","DESCRIBE STAGE","GET FILES FROM @stage_name"],answer:1},
+{cat:"Stages",q:"Which command uploads a local file to an internal stage using SnowSQL?",options:["COPY INTO stage FROM local","PUT file://path @stage_name","UPLOAD file TO stage","LOAD @stage_name FROM local"],answer:1},
+{cat:"Stages",q:"A Table Stage is automatically created for:",options:["Every view","Every table, referenced as @%table_name","Every schema only","Every database only"],answer:1},
+{cat:"Stages",q:"Scenario: You want a stage accessible by only one specific user for personal file uploads before loading. Which stage type fits?",options:["Named external stage","User Stage (@~)","Table Stage","Database default stage"],answer:1},
+{cat:"Stages",q:"To create an external stage pointing to S3, you typically need to provide:",options:["Only the bucket name","URL, credentials or storage integration, and optionally a file format","Only an IAM role name","Nothing, it's automatic"],answer:1},
+{cat:"Stages",q:"What is a Storage Integration used for with external stages?",options:["Compressing files","Securely delegating cloud provider access without hardcoding credentials","Formatting JSON files","Creating clustering keys"],answer:1},
+{cat:"Stages",q:"Which command removes files from a stage after a successful load (if not automatic)?",options:["REMOVE @stage_name/file","DELETE FROM @stage_name","PURGE STAGE","DROP FILE"],answer:0},
+{cat:"Stages",q:"Named external stages are preferred over inline stage references because they:",options:["Are faster to query","Allow reusable, centrally managed stage definitions across multiple COPY operations and queries","Automatically cluster data","Reduce Time Travel cost"],answer:1},
+{cat:"Stages",q:"Scenario: Multiple pipelines across your team load from the same S3 location. What is the best practice?",options:["Have each pipeline define its own inline external stage with hardcoded credentials","Create one Named External Stage with a Storage Integration, shared across pipelines","Use only Table Stages","Avoid stages, use direct API calls"],answer:1},
+{cat:"COPY INTO",q:"COPY INTO is primarily used to:",options:["Query external tables directly","Bulk load data from a stage into a Snowflake table, or unload a table to a stage","Create clustering keys","Clone a table"],answer:1},
+{cat:"COPY INTO",q:"Which behavior prevents reloading the same file twice into a table?",options:["FORCE = TRUE","Load metadata tracking, which prevents reload unless FORCE=TRUE is specified","VALIDATION_MODE","PURGE = TRUE"],answer:1},
+{cat:"COPY INTO",q:"Which COPY INTO option validates data without actually loading it?",options:["VALIDATION_MODE = RETURN_ERRORS","DRY_RUN = TRUE","TEST_MODE","PREVIEW = TRUE"],answer:0},
+{cat:"COPY INTO",q:"ON_ERROR = 'CONTINUE' in a COPY INTO statement means:",options:["Stop loading immediately on any error","Skip erroring rows and continue loading valid rows","Retry failed rows infinitely","Abort and roll back everything"],answer:1},
+{cat:"COPY INTO",q:"Which option automatically deletes staged files after a successful load?",options:["PURGE = TRUE","FORCE = TRUE","AUTO_CLEAN = TRUE","DELETE_AFTER_LOAD = TRUE"],answer:0},
+{cat:"COPY INTO",q:"Scenario: A COPY INTO job partially failed with 5% bad rows, but you want to load the good 95% now and review errors later. What is the best ON_ERROR setting?",options:["ABORT_STATEMENT","SKIP_FILE","CONTINUE","ROLLBACK"],answer:2},
+{cat:"COPY INTO",q:"The MATCH_BY_COLUMN_NAME option in COPY INTO is useful when:",options:["Loading CSV with no headers","Loading semi-structured data where columns should map by name to table columns","Only used for unloading","Never used in practice"],answer:1},
+{cat:"COPY INTO",q:"COPY INTO can also be used to:",options:["Only load data, never unload","Unload table data into a stage as an export","Create tables","Grant permissions"],answer:1},
+{cat:"COPY INTO",q:"Which metadata view can you query to review COPY INTO load history?",options:["INFORMATION_SCHEMA.LOAD_HISTORY / COPY_HISTORY","SHOW LOADS","DESCRIBE COPY","GET_LOAD_STATUS()"],answer:0},
+{cat:"COPY INTO",q:"Scenario: You need to reload a file that was already successfully loaded, to fix a bug, into the same table. What must you set?",options:["ON_ERROR = CONTINUE","FORCE = TRUE","PURGE = FALSE","VALIDATION_MODE = TRUE"],answer:1},
+{cat:"COPY INTO",q:"The SIZE_LIMIT option in COPY INTO controls:",options:["The maximum number of rows to load","The maximum byte size of data to load before stopping","Warehouse size","File compression size"],answer:1},
+{cat:"COPY INTO",q:"Which is generally TRUE about COPY INTO performance with many small files versus few large files?",options:["Many small files always load faster","Fewer, appropriately-sized files (roughly 100-250MB compressed) generally load more efficiently than many tiny files","File count and size have no impact","Only file format affects speed, not size"],answer:1},
+{cat:"Streams",q:"A Stream in Snowflake is used to:",options:["Store historical backups","Track and record DML changes on a table for change data capture","Compress files","Schedule queries"],answer:1},
+{cat:"Streams",q:"Which metadata columns does a Stream add when queried?",options:["METADATA$ACTION, METADATA$ISUPDATE, METADATA$ROW_ID","CHANGE_TYPE, ROW_HASH, VERSION","DELTA$TYPE, DELTA$ID","AUDIT$ACTION, AUDIT$TS"],answer:0},
+{cat:"Streams",q:"After you consume a Stream's data within a DML transaction, what happens?",options:["Stream data remains forever, unaffected","The stream's offset advances, and previously returned changes are no longer included next time","The stream is automatically dropped","Nothing changes"],answer:1},
+{cat:"Streams",q:"Streams rely on which underlying Snowflake feature to track changes?",options:["Clustering keys","Change tracking metadata tied to Time Travel","Materialized views","External stages"],answer:1},
+{cat:"Streams",q:"Scenario: Your CDC pipeline stream shows STALE = TRUE. What does this likely mean?",options:["The stream has too much data","The stream's offset is beyond the table's Time Travel retention, so it can no longer track changes reliably","The stream was queried too many times","The source table was renamed"],answer:1},
+{cat:"Streams",q:"Which types of Streams exist in Snowflake?",options:["Standard, Append-only, and Insert-only (for external tables)","Only Standard","Only Append-only","Batch and Real-time"],answer:0},
+{cat:"Streams",q:"An Append-only Stream returns:",options:["All DML changes including deletes and updates","Only row inserts, ignoring updates and deletes for faster performance","Only deletes","Nothing until manually triggered"],answer:1},
+{cat:"Streams",q:"Can a Stream be created on a View?",options:["No, only on tables","Yes, Streams can be created on certain views as well, under specific conditions","Only on External Tables","Only on Materialized Views"],answer:1},
+{cat:"Streams",q:"Streams are commonly paired with which object to automate CDC processing?",options:["Sequences","Tasks","Clustering Keys","File Formats"],answer:1},
+{cat:"Streams",q:"The SYSTEM$STREAM_HAS_DATA() function is used to:",options:["Check if a stream currently has unconsumed change data","Check if a stream is stale","Delete stream data","Count total rows in the source table"],answer:0},
+{cat:"Streams",q:"Scenario: You want to capture only new rows added to a large IoT ingestion table, ignoring updates, for performance. What is the best stream type?",options:["Standard Stream","Append-only Stream","Insert-only Stream on an internal table","No stream needed"],answer:1},
+{cat:"Tasks",q:"A Task in Snowflake is used to:",options:["Store JSON data","Schedule and automate execution of SQL statements or stored procedures","Create a virtual warehouse","Define a clustering key"],answer:1},
+{cat:"Tasks",q:"Which clause defines a Task's execution schedule using cron-like syntax?",options:["SCHEDULE = 'USING CRON ...'","TRIGGER = CRON(...)","RUN_AT = ...","EXEC_SCHEDULE"],answer:0},
+{cat:"Tasks",q:"Tasks can be chained together to form a:",options:["Stream","Directed Acyclic Graph (DAG) of dependent tasks","Materialized view chain","Clustering hierarchy"],answer:1},
+{cat:"Tasks",q:"Which command manually triggers execution of a Task outside its schedule?",options:["RUN TASK task_name","EXECUTE TASK task_name","CALL TASK task_name","START TASK task_name"],answer:1},
+{cat:"Tasks",q:"By default, a newly created Task is in which state?",options:["RESUMED, running immediately","SUSPENDED, and must be manually resumed with ALTER TASK ... RESUME","DELETED","ERROR"],answer:1},
+{cat:"Tasks",q:"Scenario: You want a Task to run only if a Stream has new data, to avoid unnecessary compute cost. What is the best approach?",options:["Schedule the task every second","Use a WHEN clause with SYSTEM$STREAM_HAS_DATA() as the condition on the task","Use a bigger warehouse","Not possible in Snowflake"],answer:1},
+{cat:"Tasks",q:"Can Tasks use serverless compute instead of a user-managed warehouse?",options:["No, they always require a warehouse","Yes, Snowflake-managed serverless compute is supported for Tasks","Only for Streams, not Tasks","Only in trial accounts"],answer:1},
+{cat:"Tasks",q:"In a Task DAG, which task typically controls the overall schedule?",options:["Every task independently","The root or predecessor task defines the schedule; child tasks trigger via an AFTER dependency","The last task in the chain","None; all run simultaneously"],answer:1},
+{cat:"Tasks",q:"Which function or view shows Task execution history?",options:["TASK_HISTORY() in INFORMATION_SCHEMA or ACCOUNT_USAGE","SHOW TASK LOGS","DESCRIBE TASK HISTORY","GET_TASK_RUNS()"],answer:0},
+{cat:"Tasks",q:"Is there a defined limit on the number of concurrent child tasks a single predecessor task can trigger?",options:["No, it is unlimited","Yes, there is a defined limit (subject to change across releases)","Only 1 child task is allowed","Only 10 child tasks are allowed"],answer:1},
+{cat:"Snowpipe",q:"Snowpipe is designed for:",options:["Batch loading once a day","Continuous, near real-time data ingestion as files arrive in a stage","Manual ad-hoc queries","Clustering optimization"],answer:1},
+{cat:"Snowpipe",q:"Snowpipe uses which compute model?",options:["User-managed virtual warehouse only","Snowflake-managed serverless compute, billed per second of usage","No compute required at all","Requires a dedicated Enterprise warehouse"],answer:1},
+{cat:"Snowpipe",q:"Which mechanism triggers Snowpipe automatically upon file arrival in cloud storage?",options:["Manual REST API call only","Cloud provider event notifications, such as S3 event notifications via SQS","A scheduled Task every minute","Snowpipe polls storage every hour"],answer:1},
+{cat:"Snowpipe",q:"Which command creates a Snowpipe?",options:["CREATE PIPE pipe_name AS COPY INTO ...","CREATE SNOWPIPE ...","CREATE STREAM pipe_name","CREATE INGESTION pipe_name"],answer:0},
+{cat:"Snowpipe",q:"Scenario: Files are landing continuously in S3 every few seconds and need near real-time loading with minimal latency and cost when idle. What is the best fit?",options:["Traditional COPY INTO scheduled via a Task every hour","Snowpipe with auto-ingest enabled","Manual PUT commands","Streams only, with no loading mechanism"],answer:1},
+{cat:"Snowpipe",q:"Which function or view checks the status and history of Snowpipe loads?",options:["SYSTEM$PIPE_STATUS() and the PIPE_USAGE_HISTORY / COPY_HISTORY views","SHOW PIPE LOGS","DESCRIBE PIPE HISTORY","GET_PIPE_STATUS()"],answer:0},
+{cat:"Snowpipe",q:"Does Snowpipe guarantee exactly-once loading of each file?",options:["No guarantee at all, duplicates are common","Snowpipe uses load history metadata to avoid loading the same file twice","Only if using a warehouse","Never loads more than once per day"],answer:1},
+{cat:"Snowpipe",q:"Snowpipe billing is based on:",options:["A flat monthly fee","Compute resources consumed per file processed, plus per-file/second overhead","Number of tables only","Storage volume only"],answer:1},
+{cat:"Snowpipe",q:"Which method can also trigger Snowpipe manually or programmatically without cloud event notifications?",options:["The insertFiles REST API call","ALTER PIPE REFRESH is the only way","CREATE TASK","Snowpipe cannot be triggered manually"],answer:0},
+{cat:"UDF/UDTF",q:"A UDF (User-Defined Function) in Snowflake returns:",options:["Always multiple rows","A single scalar value, or a table if it's a UDTF","Only the VARIANT type","Nothing, it's void"],answer:1},
+{cat:"UDF/UDTF",q:"A UDTF (User-Defined Table Function) can return:",options:["Only a scalar value","A set of rows, effectively a table","Only JSON","Only NULL"],answer:1},
+{cat:"UDF/UDTF",q:"Which languages are supported for writing Snowflake UDFs?",options:["SQL only","SQL, JavaScript, Python, Java, and Scala depending on feature availability","Only Python","Only Java"],answer:1},
+{cat:"UDF/UDTF",q:"Which keyword differentiates a UDTF from a scalar UDF in CREATE FUNCTION syntax?",options:["RETURNS TABLE(...)","RETURNS SET","RETURNS ARRAY","RETURNS MULTI"],answer:0},
+{cat:"UDF/UDTF",q:"Scenario: You need a reusable function to parse and standardize phone numbers across many queries. What is the best approach?",options:["Copy-paste SQL logic everywhere","Create a scalar UDF encapsulating the logic","Use a Stream","Use a Stage"],answer:1},
+{cat:"UDF/UDTF",q:"UDTFs are typically used in a query with which clause?",options:["A JOIN or in the FROM clause, often with LATERAL/TABLE()","Only in a WHERE clause","Only in GROUP BY","They cannot be used in queries directly"],answer:0},
+{cat:"UDF/UDTF",q:"What does SECURE in 'CREATE SECURE FUNCTION' do?",options:["Encrypts the function's output","Hides the function's definition from unauthorized users while still allowing execution","Speeds up execution","Enables Time Travel on function results"],answer:1},
+{cat:"UDF/UDTF",q:"Can a Python UDF use external packages?",options:["No, never","Yes, via Anaconda-integrated packages available in Snowflake's package repository","Only via manual upload of .py files always","Only in JavaScript UDFs"],answer:1},
+{cat:"Stored Procedures",q:"A Stored Procedure differs from a UDF mainly because it:",options:["Cannot contain any logic","Can perform DDL/DML and procedural control flow, and is invoked via CALL","Always returns a table","Cannot use SQL at all"],answer:1},
+{cat:"Stored Procedures",q:"Which languages can be used to write Snowflake Stored Procedures?",options:["Only SQL","Snowflake Scripting, JavaScript, Python, Java, and Scala","Only JavaScript","Only Python"],answer:1},
+{cat:"Stored Procedures",q:"How is a Stored Procedure executed?",options:["SELECT proc_name()","CALL proc_name(args)","RUN proc_name","EXECUTE proc_name AS SELECT"],answer:1},
+{cat:"Stored Procedures",q:"Can Stored Procedures execute DDL statements like CREATE or DROP TABLE?",options:["No, never","Yes, unlike standard UDFs, Stored Procedures can execute both DDL and DML","Only DML, never DDL","Only in Enterprise edition"],answer:1},
+{cat:"Stored Procedures",q:"Scenario: You need to build a multi-step ETL process with conditional logic, error handling, and looping. What is the best object to use?",options:["A single SELECT query","A Stored Procedure using Snowflake Scripting or Python","A View","A UDF"],answer:1},
+{cat:"Stored Procedures",q:"By default, Stored Procedures run under which privilege model?",options:["The owner's rights, unless EXECUTE AS CALLER is specified","Always the caller's rights","No privilege checks apply","The PUBLIC role only"],answer:0},
+{cat:"Stored Procedures",q:"What does the EXECUTE AS CALLER clause mean for a Stored Procedure?",options:["It always uses the owner's privileges","It runs using the privileges of the user calling it, not the owner","It disables the procedure","It grants ACCOUNTADMIN automatically"],answer:1},
+{cat:"Stored Procedures",q:"Can a Stored Procedure return a result set?",options:["No, procedures never return anything","Yes, it can return a scalar value, or use RETURNS TABLE to return a result set","Only NULL","Only error codes"],answer:1},
+{cat:"Views",q:"A Standard View in Snowflake:",options:["Physically stores query results permanently","Stores only the query definition; results are computed at query time from underlying tables","Automatically refreshes on a schedule like a table","Requires its own warehouse"],answer:1},
+{cat:"Views",q:"A Materialized View differs from a Standard View because it:",options:["Never stores data","Physically stores precomputed results and auto-refreshes when base data changes, improving performance for expensive queries","Cannot be queried directly","Is only for external tables"],answer:1},
+{cat:"Views",q:"A Secure View is primarily used to:",options:["Increase query speed only","Hide the view's underlying query definition and restrict data exposure","Enable clustering","Enable Time Travel"],answer:1},
+{cat:"Views",q:"Which limitation applies to Materialized Views compared to standard views?",options:["They can be created on any arbitrarily complex join freely","They cannot reference multiple tables via JOIN in most cases, and have other restrictions depending on release","They cannot be queried at all","They require external stages"],answer:1},
+{cat:"Views",q:"Scenario: You have a complex, expensive aggregation query run frequently by many dashboards on relatively static data. What is the best object choice?",options:["A Standard View, recomputed every time","A Materialized View, precomputed and auto-maintained","A Temporary Table","An External Table"],answer:1},
+{cat:"Views",q:"Do Standard Views consume storage costs directly?",options:["Yes, the same as tables","No, standard views don't store data themselves, only the query definition, with negligible metadata storage","Yes, double the base table","Only if cloned"],answer:1},
+{cat:"Views",q:"Materialized Views incur additional cost due to:",options:["No additional cost ever","Background maintenance and refresh compute credits to keep them in sync with base table changes","Only storage, no compute","Only during Time Travel"],answer:1},
+{cat:"Views",q:"Can you create a Secure Materialized View?",options:["No, Secure and Materialized are mutually exclusive","Yes, Snowflake supports combining SECURE with MATERIALIZED VIEW","Only for external tables","Only for Temporary views"],answer:1},
+{cat:"Access Control",q:"Snowflake's access control model is based on:",options:["Row-level security only","Role-Based Access Control (RBAC) with optional extensions like row and column policies","User-based ACLs only","No access control model"],answer:1},
+{cat:"Access Control",q:"Which built-in role typically has the highest level of administrative privilege?",options:["PUBLIC","SYSADMIN","ACCOUNTADMIN","SECURITYADMIN"],answer:2},
+{cat:"Access Control",q:"Which role is responsible for managing users and roles/grants, but not necessarily warehouses or other objects?",options:["SYSADMIN","SECURITYADMIN","ACCOUNTADMIN only","PUBLIC"],answer:1},
+{cat:"Access Control",q:"Which statement correctly grants SELECT on a table to a role?",options:["GRANT SELECT ON TABLE t TO ROLE analyst_role","ALLOW SELECT ON t FOR analyst_role","ADD PRIVILEGE SELECT TO analyst_role","ASSIGN SELECT ON t TO analyst_role"],answer:0},
+{cat:"Access Control",q:"What is a Row Access Policy used for?",options:["Encrypting columns","Restricting which rows a user can see based on policy logic, applied at query time","Compressing rows","Clustering rows physically"],answer:1},
+{cat:"Access Control",q:"What is Dynamic Data Masking (column-level security) used for?",options:["Hiding entire tables","Masking specific column values based on the querying role or user context","Encrypting the whole database","Blocking DDL statements"],answer:1},
+{cat:"Access Control",q:"Scenario: Analysts should see masked SSNs, but the Compliance team should see full SSNs in the same column. What is the best approach?",options:["Create two separate tables","Apply a Masking Policy on the column with conditional logic based on CURRENT_ROLE()","Use a Row Access Policy instead","Not possible in Snowflake"],answer:1},
+{cat:"Access Control",q:"Roles in Snowflake can be:",options:["Only assigned to one user each, with no hierarchy","Hierarchical, since roles can be granted to other roles, forming a role hierarchy","Never inherited","Only system-defined, not custom"],answer:1},
+{cat:"Access Control",q:"Which privilege is required to create a new virtual warehouse?",options:["USAGE on a database","CREATE WAREHOUSE privilege, typically held by SYSADMIN or a granted role","SELECT on the account","OWNERSHIP of the PUBLIC role"],answer:1},
+{cat:"Access Control",q:"Future grants are used to:",options:["Grant privileges retroactively to already-existing objects only","Automatically apply specified privileges to objects created in the future within a schema or database","Revoke all grants","Grant privileges only to ACCOUNTADMIN"],answer:1},
+{cat:"Access Control",q:"Which command shows all privileges granted to a specific role?",options:["SHOW GRANTS TO ROLE role_name","DESCRIBE ROLE role_name","LIST GRANTS role_name","GET_PRIVILEGES(role_name)"],answer:0},
+{cat:"Access Control",q:"Scenario: A new analyst role needs read-only access to all current AND future tables in a schema. What is the best approach?",options:["Manually grant SELECT on each table individually forever","Grant SELECT on all current tables in the schema, plus a future grant for SELECT on future tables in the schema","Grant ACCOUNTADMIN","Use a Materialized View instead"],answer:1},
+{cat:"Access Control",q:"The PUBLIC role in Snowflake is:",options:["The most privileged role","A default role automatically granted to every user, typically with minimal privileges unless configured","Only for ACCOUNTADMIN","Deprecated and unused"],answer:1},
+{cat:"Scenario",q:"Your ETL job loads 500 small (2MB) files hourly into a staging table, and the pipeline is slow. What is the best optimization?",options:["Increase Time Travel retention","Combine files into fewer, larger files (roughly 100-250MB) before loading, or use Snowpipe for continuous small-file ingestion","Switch to a Temporary table","Add a clustering key"],answer:1},
+{cat:"Scenario",q:"A dashboard team complains their queries against a 5TB sales table filtering by 'region' are slow, despite region having only 4 values. What is the best fix?",options:["Add a clustering key combining region with a higher-cardinality correlated column like date","Convert the table to Transient","Reduce Time Travel to 0","Use a UDF"],answer:0},
+{cat:"Scenario",q:"You need to give a third-party vendor temporary read access to specific tables for 30 days only. What is the best approach?",options:["Share your login credentials","Create a role with SELECT grants on specific objects, assign it to the vendor's user, and revoke or drop it after 30 days","Give them ACCOUNTADMIN","Export data to a shared spreadsheet instead"],answer:1},
+{cat:"Scenario",q:"Your nightly batch job cost has spiked because a warehouse remained active longer than expected. Where should root cause investigation start?",options:["Checking the AUTO_SUSPEND setting and query history/duration on that warehouse","Deleting the warehouse","Increasing Time Travel","Adding more clustering keys"],answer:0},
+{cat:"Scenario",q:"A junior analyst accidentally ran an UPDATE without a WHERE clause on a Permanent table 2 hours ago. What is the best recovery method?",options:["Recreate the table from scratch manually","Use Time Travel with AT/BEFORE offset to query the pre-update state and restore correct data","Contact Snowflake support to restore from Fail-safe","Nothing can be done"],answer:1},
+{cat:"Scenario",q:"You want to test a new transformation on production-scale data without affecting production or incurring full storage cost. What is the best approach?",options:["Manually export and import the entire dataset","Use Zero-Copy Clone to create an instant dev copy of the schema or database","Ask for a new Snowflake account","Use CSV exports"],answer:1},
+{cat:"Scenario",q:"Marketing needs near-real-time campaign performance data, within minutes, as files land in S3 continuously throughout the day. What is the best ingestion method?",options:["Daily batch COPY INTO via a Task","Snowpipe with auto-ingest via S3 event notifications","Manual PUT plus COPY INTO once a week","Materialized View refresh"],answer:1},
+{cat:"Scenario",q:"Your CDC pipeline stream became stale because a downstream Task was suspended for 10 days, exceeding Time Travel retention. What is the best remediation going forward?",options:["Ignore it, streams never go stale","Recreate the stream and ensure the consuming Task runs frequently enough within the retention window, and consider increasing DATA_RETENTION_TIME_IN_DAYS","Convert the table to Temporary","Disable Time Travel entirely"],answer:1},
+{cat:"Scenario",q:"Finance requires the SSN column fully masked for all roles except COMPLIANCE_ROLE, across 20 tables containing this column. What is the most scalable approach?",options:["Manually write CASE WHEN logic in every view or query using this column","Create a single reusable Masking Policy and apply it to the SSN column across all 20 tables","Duplicate all 20 tables for the compliance team","Use a Row Access Policy instead of masking"],answer:1},
+{cat:"Scenario",q:"Your team wants a DAG-based pipeline: Task A loads data, Task B transforms only if A succeeds and a Stream has data, and Task C generates a report after B. What is the best design?",options:["Three independent Tasks all on the same fixed schedule","Task A on schedule; Task B set as AFTER A with a WHEN clause using SYSTEM$STREAM_HAS_DATA(); Task C set as AFTER B","One giant Stored Procedure with no Tasks","Use only Snowpipe for everything"],answer:1},
+{cat:"Scenario",q:"You need a table for temporary intermediate results in a multi-step session-based SQL script, wanting zero long-term storage or Fail-safe cost. What is the best table type?",options:["Permanent","Transient","Temporary","External"],answer:2},
+{cat:"Scenario",q:"A BI tool times out on a dashboard querying a Materialized View, and the MV refresh is lagging significantly behind the base table. What is the likely cause?",options:["The MV refresh compute isn't keeping up with high-frequency base table changes; the query pattern or refresh strategy needs review","MVs don't support refresh at all","A clustering key is missing on the MV","The warehouse doesn't support MVs"],answer:0},
+{cat:"Scenario",q:"You want new hires (Analysts) to automatically inherit SELECT access to any new table created in the 'sales' schema without manual grants each time. What is the best solution?",options:["Manually grant access after every table creation","Set up a future grant for SELECT on future tables in the sales schema to the analyst role","Grant ACCOUNTADMIN to all analysts","Disable RBAC"],answer:1},
+{cat:"Scenario",q:"Your organization wants to reduce compute costs for a rarely-used reporting warehouse that's often left running. What are the best two actions?",options:["Increase warehouse size and disable auto-suspend","Lower the AUTO_SUSPEND time and rely on AUTO_RESUME so it starts only when needed","Convert the warehouse into a Stage","Switch reporting tables to Temporary"],answer:1},
+{cat:"Scenario",q:"A vendor's ad platform data lands as nested JSON with campaign performance arrays inside each record. Analysts need it as flat rows and columns. What is the recommended approach?",options:["Load as VARIANT, then use LATERAL FLATTEN() in a view or transformation to normalize into rows and columns","Reject the JSON format entirely","Manually retype each record","Use only COPY INTO with no transformation"],answer:0}
+];
+
+const questionBank = QB.map((item, index) => ({
+ id: "q" + index,
+ type: item.cat === "Scenario" ? "scenario" : (index % 2 === 0 ? "technical" : "conceptual"),
+ topic: item.cat,
+ question: item.q,
+ options: item.options,
+ answer: item.answer,
+ hint: "Think about the core purpose and typical real-world use case of " + item.cat + " in Snowflake."
+}));
+
+const QUESTIONS_PER_ATTEMPT = 15;
+const TOTAL_TIME_SECONDS = 7 * 60;
+const RESULTS_WEBHOOK_URL = "https://default41eb501af6714ce0a5bfb64168c370.5f.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bd300e6232e74f3f9686ae59efa043fc/triggers/manual/paths/invoke?api-version=1";
+
+function getUsedQuestionIds() {
+ return JSON.parse(localStorage.getItem("snowflakeUsedQuestionIds") || "[]");
+}
+function saveUsedQuestionIds(ids) {
+ localStorage.setItem("snowflakeUsedQuestionIds", JSON.stringify(ids));
+}
+function clearQuestionHistory() {
+ localStorage.removeItem("snowflakeUsedQuestionIds");
+}
+function shuffle(array) {
+ return [...array].sort(() => Math.random() - 0.5);
+}
+
+function getQuestionsForAttempt() {
+ let usedIds = getUsedQuestionIds();
+ let available = questionBank.filter(q => !usedIds.includes(q.id));
+
+ if (available.length < QUESTIONS_PER_ATTEMPT) {
+ clearQuestionHistory();
+ usedIds = [];
+ available = [...questionBank];
+ }
+
+ const selected = shuffle(available).slice(0, QUESTIONS_PER_ATTEMPT);
+ saveUsedQuestionIds([...usedIds, ...selected.map(q => q.id)]);
+ return selected;
+}
+
+let questions = [];
+let currentQuestion = 0;
+let selectedAnswer = null;
+let score = 0;
+let locked = false;
+let overallTimerInterval;
+let hintInterval;
+let totalTimeRemaining = TOTAL_TIME_SECONDS;
+let hintRemaining = 10;
+let answerReview = [];
+let quizEnded = false;
+let attemptStartedAt = null;
+
+document.getElementById("bankSizeStat").textContent = questionBank.length;
+
+function validateName() {
+ const nameInput = document.getElementById("userName");
+ const errorText = document.getElementById("nameError");
+ const name = nameInput.value.trim();
+
+ if (!name) {
+ nameInput.classList.add("error");
+ errorText.textContent = "Name is required to join the leaderboard.";
+ return null;
+ }
+
+ nameInput.classList.remove("error");
+ errorText.textContent = "";
+ return name;
+}
+
+function startQuiz() {
+ const name = validateName();
+ if (!name) return;
+
+ sessionStorage.setItem("snowflakeUser", name);
+
+ questions = getQuestionsForAttempt().map(question => {
+ const correctText = question.options[question.answer];
+ const randomizedOptions = shuffle(question.options);
+ return {
+ ...question,
+ options: randomizedOptions,
+ answer: randomizedOptions.indexOf(correctText)
+ };
+ });
+
+ currentQuestion = 0;
+ selectedAnswer = null;
+ score = 0;
+ answerReview = [];
+ quizEnded = false;
+ totalTimeRemaining = TOTAL_TIME_SECONDS;
+ attemptStartedAt = new Date();
+
+ document.getElementById("startScreen").classList.add("hidden");
+ document.getElementById("resultScreen").classList.add("hidden");
+ document.getElementById("quizScreen").classList.remove("hidden");
+
+ startOverallTimer();
+ renderQuestion();
+}
+
+function startOverallTimer() {
+ clearInterval(overallTimerInterval);
+ const timerEl = document.getElementById("timer");
+
+ overallTimerInterval = setInterval(() => {
+ totalTimeRemaining--;
+
+ const minutes = Math.floor(totalTimeRemaining / 60);
+ const seconds = totalTimeRemaining % 60;
+ timerEl.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+ if (totalTimeRemaining <= 60) timerEl.classList.add("warning");
+
+ if (totalTimeRemaining <= 0) {
+ clearInterval(overallTimerInterval);
+ timeIsUp();
+ }
+ }, 1000);
+}
+
+function timeIsUp() {
+ if (quizEnded) return;
+
+ if (!locked) {
+ const question = questions[currentQuestion];
+ answerReview.push({
+ question: question.question,
+ selected: "No answer (time expired)",
+ correctAnswer: question.options[question.answer],
+ correct: false
+ });
+ }
+
+ for (let i = currentQuestion + 1; i < questions.length; i++) {
+ answerReview.push({
+ question: questions[i].question,
+ selected: "No answer (time expired)",
+ correctAnswer: questions[i].options[questions[i].answer],
+ correct: false
+ });
+ }
+
+ finishQuiz();
+}
+
+function renderQuestion() {
+ const question = questions[currentQuestion];
+
+ locked = false;
+ selectedAnswer = null;
+ hintRemaining = 10;
+
+ document.getElementById("questionMeta").innerHTML =
+ `Question ${currentQuestion + 1} of ${QUESTIONS_PER_ATTEMPT} <span class="topic-pill">${question.topic}</span>`;
+
+ document.getElementById("progress").style.width = `${(currentQuestion / QUESTIONS_PER_ATTEMPT) * 100}%`;
+ document.getElementById("questionText").textContent = question.question;
+
+ const optionsContainer = document.getElementById("options");
+ optionsContainer.innerHTML = "";
+
+ question.options.forEach((option, index) => {
+ const button = document.createElement("button");
+ button.className = "option";
+ button.innerHTML = `<span class="option-letter">${String.fromCharCode(65 + index)}</span><span>${option}</span>`;
+ button.onclick = () => selectAnswer(index, button);
+ optionsContainer.appendChild(button);
+ });
+
+ document.getElementById("nextButton").disabled = true;
+ document.getElementById("nextButton").textContent = "Next Question";
+
+ const feedback = document.getElementById("feedback");
+ feedback.className = "feedback hidden";
+ feedback.textContent = "";
+
+ document.getElementById("hint").innerHTML = `Hint unlocks in <span id="hintCounter">10</span>s`;
+
+ startHintTimer();
+}
+
+function startHintTimer() {
+ clearInterval(hintInterval);
+
+ hintInterval = setInterval(() => {
+ hintRemaining--;
+ const counter = document.getElementById("hintCounter");
+ if (counter) counter.textContent = hintRemaining;
+ if (hintRemaining <= 0) {
+ clearInterval(hintInterval);
+ document.getElementById("hint").innerHTML = `<b>Hint:</b> ${questions[currentQuestion].hint}`;
+ }
+ }, 1000);
+}
+
+function selectAnswer(index, button) {
+ if (locked) return;
+
+ selectedAnswer = index;
+
+ document.querySelectorAll(".option").forEach(option => option.classList.remove("selected"));
+ button.classList.add("selected");
+
+ lockAnswer();
+}
+
+function nextQuestion() {
+ if (!locked) return;
+
+ if (currentQuestion < QUESTIONS_PER_ATTEMPT - 1) {
+ currentQuestion++;
+ renderQuestion();
+ } else {
+ finishQuiz();
+ }
+}
+
+function lockAnswer() {
+ if (locked) return;
+ locked = true;
+
+ clearInterval(hintInterval);
+
+ const question = questions[currentQuestion];
+ const isCorrect = selectedAnswer === question.answer;
+ if (isCorrect) score++;
+
+ answerReview.push({
+ question: question.question,
+ selected: selectedAnswer === null ? "No answer" : question.options[selectedAnswer],
+ correctAnswer: question.options[question.answer],
+ correct: isCorrect
+ });
+
+ document.querySelectorAll(".option").forEach((button, index) => {
+ button.disabled = true;
+ if (index === question.answer) button.style.borderColor = "var(--good)";
+ if (index === selectedAnswer && index !== question.answer) button.style.borderColor = "var(--bad)";
+ });
+
+ const feedback = document.getElementById("feedback");
+ feedback.className = "feedback " + (isCorrect ? "good" : "bad");
+ feedback.textContent = isCorrect
+ ? "Correct — nice work."
+ : `Not quite. Correct answer: ${question.options[question.answer]}`;
+
+ document.getElementById("nextButton").textContent =
+ currentQuestion === QUESTIONS_PER_ATTEMPT - 1 ? "See Results" : "Next Question";
+ document.getElementById("nextButton").disabled = false;
+}
+
+function finishQuiz() {
+ if (quizEnded) return;
+ quizEnded = true;
+
+ clearInterval(overallTimerInterval);
+ clearInterval(hintInterval);
+
+ document.getElementById("quizScreen").classList.add("hidden");
+ document.getElementById("resultScreen").classList.remove("hidden");
+
+ const percentage = Math.round((score / QUESTIONS_PER_ATTEMPT) * 100);
+ const name = sessionStorage.getItem("snowflakeUser") || "Learner";
+ const timeTakenSeconds = TOTAL_TIME_SECONDS - Math.max(totalTimeRemaining, 0);
+
+ document.getElementById("scorePercent").textContent = `${percentage}%`;
+ document.getElementById("scoreRing").style.setProperty("--score", `${percentage}%`);
+
+ let resultTitle;
+ if (percentage >= 80) resultTitle = "Snowflake Champion";
+ else if (percentage >= 60) resultTitle = "Solid contender — keep sharpening";
+ else resultTitle = "Good start — revisit the fundamentals";
+
+ document.getElementById("resultTitle").textContent = resultTitle;
+ document.getElementById("resultSummary").textContent =
+ `${name}, you scored ${score} out of ${QUESTIONS_PER_ATTEMPT} (${percentage}%). Your next battle will use different questions.`;
+
+ document.getElementById("reviewList").innerHTML = answerReview.map((item, index) => `
+ <div class="review-row">
+ <strong>${index + 1}. ${item.correct ? "✓" : "✕"} ${item.question}</strong>
+ <small>Your answer: ${item.selected} · Correct answer: ${item.correctAnswer}</small>
+ </div>
+ `).join("");
+
+ submitResult({
+ name: name,
+ score: score,
+ totalQuestions: QUESTIONS_PER_ATTEMPT,
+ percentage: percentage,
+ timeTakenSeconds: timeTakenSeconds,
+ attemptDate: attemptStartedAt ? attemptStartedAt.toISOString() : new Date().toISOString()
+ });
+}
+
+function submitResult(payload) {
+ if (!RESULTS_WEBHOOK_URL) return;
+
+ fetch(RESULTS_WEBHOOK_URL, {
+ method: "POST",
+ headers: { "Content-Type": "application/json" },
+ body: JSON.stringify(payload)
+ }).catch(err => {
+ console.warn("Result logging failed (webhook unreachable):", err);
+ });
+}
+
+function showStartScreen() {
+ document.getElementById("resultScreen").classList.add("hidden");
+ document.getElementById("startScreen").classList.remove("hidden");
+ document.getElementById("userName").value = "";
+ document.getElementById("nameError").textContent = "";
+ document.getElementById("userName").classList.remove("error");
+}
+</script>
+</body>
+</html>
