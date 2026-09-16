@@ -374,7 +374,7 @@ const questionBank = QB.map((item, index) => ({
 
 const QUESTIONS_PER_ATTEMPT = 15;
 const TOTAL_TIME_SECONDS = 7 * 60;
-const RESULTS_WEBHOOK_URL = "https://default41eb501af6714ce0a5bfb64168c370.5f.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bd300e6232e74f3f9686ae59efa043fc/triggers/manual/paths/invoke?api-version=1";
+const RESULTS_WEBHOOK_URL = "https://default41eb501af6714ce0a5bfb64168c370.5f.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bd300e6232e74f3f9686ae59efa043fc/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2hZRF_wrUVC-GC-7GLCwzXGdMV-B3V7xJX5mkeBlyyA";
 
 function getUsedQuestionIds() {
  return JSON.parse(localStorage.getItem("snowflakeUsedQuestionIds") || "[]");
